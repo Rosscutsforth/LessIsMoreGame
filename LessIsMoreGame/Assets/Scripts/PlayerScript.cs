@@ -18,8 +18,6 @@ public class PlayerScript : MonoBehaviour
     public float turnSmoothVelocity;
     public Vector3 moveDir;
 
-    public float counterMovement = 0.175f;
-
     //Declaring variables for player jumping
     public float jumpForce;
     public float distanceToGround = 0.1f;
@@ -38,25 +36,16 @@ public class PlayerScript : MonoBehaviour
 
     private void Update()
     {
-        Vector3 moveInput = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
-        moveAmount = moveInput.normalized * speed;
-
-        if (IsGrounded() && canJump == false && Input.GetButtonDown("Jump"))
-        {
-            canJump = true;
-        }
-
-        //Determines angle for player orientation
-        if(moveInput.magnitude >= 0.1f)
-        {
-            float targetAngle = Mathf.Atan2(moveInput.x, moveInput.z) * Mathf.Rad2Deg + camera.eulerAngles.y;
-            float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
-            transform.rotation = Quaternion.Euler(0f, angle, 0f);
-            moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
-        }
+        movementCalcs();
     }
 
     private void FixedUpdate()
+    {
+        Movement();
+    }
+
+    //Takes calculations from movementCalcs and moves player
+    private void Movement()
     {
         playerRB.MovePosition(playerRB.position + moveDir.normalized * speed * Time.fixedDeltaTime);
 
@@ -67,11 +56,34 @@ public class PlayerScript : MonoBehaviour
         }
     }
 
-    private void movement()
+    //Handles input, player direction, and movement calculations
+    private void movementCalcs()
     {
+        Vector3 moveInput = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
 
+        if (IsGrounded() && canJump == false && Input.GetButtonDown("Jump"))
+        {
+            canJump = true;
+        }
+
+        //Determines angle for player orientation
+        if (moveInput.magnitude >= 0.1f)
+        {
+            float targetAngle = Mathf.Atan2(moveInput.x, moveInput.z) * Mathf.Rad2Deg + camera.eulerAngles.y;
+            float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
+            transform.rotation = Quaternion.Euler(0f, angle, 0f);
+            moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
+        }
+        else if(moveInput.magnitude == 0f)
+        {
+            float targetAngle = Mathf.Atan2(moveInput.x, moveInput.z) * Mathf.Rad2Deg + camera.eulerAngles.y;
+            float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
+            transform.rotation = Quaternion.Euler(0f, angle, 0f);
+            moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.zero;
+        }
     }
 
+    //Function to check if Player is touching any object with the tag 'Ground'
     private bool IsGrounded()
     {
         Vector3 capsuleBottom = new Vector3(capsu.bounds.center.x, capsu.bounds.min.y,
